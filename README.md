@@ -2,6 +2,65 @@
   
 ## 发编程学习实践  
   
+- [什么情况下应该使用多线程](#什么情况下应该使用多线程)  
+  - [tomcat7以前的IO模型](#tomcat7以前的io模型)  
+- [如何应用多线程](#如何应用多线程)  
+  - [继承Thread类创建线程](#继承thread类创建线程)  
+  - [实现Runnable接口创建线程](#实现runnable接口创建线程)  
+  - [实现Callable接口通过FutureTask包装器来创建Thread线程](#实现callable接口通过futuretask包装器来创建thread线程)  
+- [如何把多线程用得更加优雅](#如何把多线程用得更加优雅)  
+- [Java并发编程的基础](#java并发编程的基础)  
+  - [线程的状态](#线程的状态)  
+  - [通过代码演示线程的状态](#通过代码演示线程的状态)  
+  - [通过相应命令显示线程状态](#通过相应命令显示线程状态)  
+- [线程的停止](#线程的停止)  
+  - [interrupt方法](#interrupt方法)  
+  - [Thread.interrupted](#threadinterrupted)  
+  - [其他的线程复位](#其他的线程复位)    
+  - [volatile标志位停止线程](#volatile标志位停止线程)  
+- [线程的安全性问题](#线程的安全性问题)
+  - [CPU高速缓存](#cpu高速缓存)  
+- [缓存一致性问题](#缓存一致性问题)  
+  - [总线锁](#总线锁)  
+  - [缓存锁](#缓存锁)  
+  - [缓存一致性协议](#缓存一致性协议)  
+  - [并发编程的问题](#并发编程的问题)  
+- [Java内存模型](#java内存模型)  
+- [JMM怎么解决原子性、可见性、有序性的问题?](#jmm怎么解决原子性可见性有序性的问题)  
+- [volatile如何保证可见性](#客户端)  
+  - [volatile防止指令重排序](#volatile防止指令重排序)  
+  - [多核心多线程下的指令重排影响](#多核心多线程下的指令重排影响)  
+- [内存屏障](#内存屏障)  
+  - [从CPU层面来了解一下什么是内存屏障](#从cpu层面来了解一下什么是内存屏障)  
+  - [编译器层面如何解决指令重排序问题](#编译器层面如何解决指令重排序问题)  
+- [volatile为什么不能保证原子性](#volatile为什么不能保证原子性)  
+- [synchronized的使用](#synchronized的使用)  
+- [synchronized的锁的原理](#synchronized的锁的原理)  
+- [synchronized的锁升级和获取过程](#synchronized的锁升级和获取过程)  
+- [wait和notify](#wait和notify)  
+  - [wait和notify的原理](#wait和notify的原理)  
+- [同步锁](#同步锁)  
+- [Lock的初步使用](#lock的初步使用)  
+  - [ReentrantLock](#reentrantlock)  
+  - [ReentrantReadWriteLock](#reentrantreadwritelock)  
+- [Lock和synchronized的简单对比](#lock和synchronized的简单对比)  
+- [AQS](#aqs)  
+  - [AQS的内部实现](#AQS的内部实现)    
+- [ReentrantLock的实现原理分析](#reentrantlock的实现原理分析)  
+  - [非公平锁的实现流程时序图](#非公平锁的实现流程时序图)  
+- [ReentrantLock源码分析](#reentrantlock源码分析)  
+- [公平锁和非公平锁的区别](#公平锁和非公平锁的区别)  
+- [Condition源码分析](#condition)  
+- [CountDownLatch](#countdownlatch)  
+- [CountDownLatch源码分析](#countdownlatch源码分析)  
+- [Semaphore](#semaphore)  
+- [Semaphore源码分析](#semaphore源码分析)  
+- [原子操作](#原子操作)  
+- [线程池](#线程池)  
+- [ThreadpoolExecutor](#threadpoolexecutor)  
+- [线程池的源码分析](#线程池的源码分析)  
+  - [线程池执行流程图](#线程池执行流程图)  
+  
 ### 什么情况下应该使用多线程  
   
 线程出现的目的是什么？解决进程中多任务的实时性问题？其实简单来说，也就是解决“阻塞”的问题，阻塞的意思就是程序运行到某个函数或过程后等待某些事件发生而暂时停止 CPU 占用的情况，也就是说会使得 CPU 闲置。还有一些场景就是比如对于一个函数中的运算逻辑的性能问题，我们可以通过多线程的技术，使得一个函数中的多个逻辑运算通过多线程技术达到一个并行执行，从而提升性能。  
@@ -20,7 +79,7 @@
   
 在 Java 中，有多种方式来实现多线程。继承 Thread 类、实现 Runnable 接 口、使用 ExecutorService、Callable、Future 实现带返回结果的多线程。  
   
-#### 继承 Thread 类创建线程  
+#### 继承Thread类创建线程  
 Thread 类本质上是实现了 Runnable 接口的一个实例，代表一个线程的实例。 启动线程的唯一方法就是通过 Thread 类的 start()实例方法。start()方法是一个 native 方法，它会启动一个新线程，并执行 run()方法。这种方式实现多线程很简单，通过自己的类直接 extend Thread，并复写 run()方法，就可以启动新线 程并执行自己定义的 run()方法。  
 ```
 public class MyThread extends Thread {
@@ -35,7 +94,7 @@ public class MyThread extends Thread {
    myThread2.start();
 }
 ```
-#### 实现 Runnable 接口创建线程  
+#### 实现Runnable接口创建线程  
 如果自己的类已经 extends 另一个类，就无法直接 extends Thread，此时，可以实现一个 Runnable 接口。  
 ```
 public class MyThread extends OtherClass implements Runnable {
@@ -45,7 +104,7 @@ public class MyThread extends OtherClass implements Runnable {
    }
 }
 ```
-#### 实现 Callable 接口通过 FutureTask 包装器来创建 Thread 线程
+#### 实现Callable接口通过FutureTask包装器来创建Thread线程
 有的时候，我们可能需要让一步执行的线程在执行完成以后，提供一个返回值给到当前的主线程，主线程需要依赖这个值进行后续的逻辑处理，那么这个时候，就需要用到带返回值的线程了。Java 中提供了这样的实现方式
 ```
 public class CallableDemo implements Callable<String> {
@@ -1132,12 +1191,12 @@ protected final boolean* tryAcquire(int acquires) {
  ```
 这个方法与nonfairTryAcquire(int acquires)比较，不同的地方在于判断条件多了hasQueuedPredecessors()方法，也就是加入了同步队列中当前节点是否有前驱节点的判断，如果该方法返回true，则表示有线程比当前线程更早地请求获取锁，因此需要等待前驱线程获取并释放锁之后才能继续获取锁。  
   
-### Condition  
+### Condition源码分析  
   
 通过前的讲解，我们知道任意一个Java对象，都拥有一组监视器方法(定义在java.lang.Object上)，主要包 括wait()、notify()以及notifyAll()方法，这些方法与synchronized同步关键字配合，可以实现等待/通知模式。  
 JUC包提供了Condition来对锁进行精准控制，Condition是一个多线程协调通信的工具类，可以让某些线程一起等待某个条件(condition)，只有满足条件时，线程才会被唤醒。  
    
-#### ConditionWait源码分析  
+#### ConditionWait  
 ```
 public class ConditionDemoWait implements  Runnable{
      private Lock lock;
@@ -1289,7 +1348,8 @@ public static void main(String[] args) throws InterruptedException {
 >1.通过countdownlatch实现最大的并行请求，也就是可以让N个线程同时执行，这个我也是在课堂上写得比较多的。  
 >2.比如应用程序启动之前，需要确保相应的服务已经启动，比如我们之前在讲zookeeper的时候，通过原生api连接的地方有用到countDownLatch。  
   
-#### CountDownLatch源码分析  
+### CountDownLatch源码分析  
+  
 CountDownLatch类存在一个内部类Sync，上节课我们讲过，它是一个同步工具，一定继承了 AbstractQueuedSynchronizer。很显然，CountDownLatch实际上是是使得线程阻塞了，既然涉及到阻塞，就一定涉及到AQS队列。  
   
 #### await  
@@ -1688,6 +1748,6 @@ public void execute(Runnable command) {
         reject(command); //如果创建新线程失败了，说明线程池被关闭或者线程池完全满了，拒绝任务
  }
 ```
-流程图  
+#### 线程池执行流程图  
 ![](https://github.com/YufeizhangRay/image/blob/master/concurrent/%E6%B5%81%E7%A8%8B%E5%9B%BE.jpeg)  
   
