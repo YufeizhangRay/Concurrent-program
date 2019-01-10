@@ -1659,11 +1659,14 @@ public class Test implements Runnable{
   
 前面说的四种线程池构建工具，都是基于ThreadPoolExecutor 类，它的构造函数参数
 ```
-public ThreadPoolExecutor(int corePoolSize, //核心线程数量 int maximumPoolSize, //最大线程数
-long keepAliveTime, //超时时间,超出核心线程数量以外的线程空余存活时间
-TimeUnit unit, //存活时间单位
-BlockingQueue<Runnable> workQueue, //保存执行任务的队列 ThreadFactory threadFactory,//创建新线程使用的工厂
-RejectedExecutionHandler handler //当任务无法执行的时候的处理方式 ){
+public ThreadPoolExecutor(int corePoolSize, //核心线程数量 
+                          int maximumPoolSize, //最大线程数
+                          long keepAliveTime, //超时时间,超出核心线程数量以外的线程空余存活时间
+                          TimeUnit unit, //存活时间单位
+                          BlockingQueue<Runnable> workQueue, //保存执行任务的队列 
+                          ThreadFactory threadFactory,//创建新线程使用的工厂
+                          RejectedExecutionHandler handler //当任务无法执行的时候的处理方式 ){
+                          
     this(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, Executors.defaultThreadFactory(), defaultHandler);
 }
 ```
