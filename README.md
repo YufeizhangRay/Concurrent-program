@@ -59,7 +59,9 @@
 - [线程池](#线程池)  
 - [ThreadpoolExecutor](#threadpoolexecutor)  
 - [线程池的源码分析](#线程池的源码分析)  
-  - [线程池执行流程图](#线程池执行流程图)  
+  - [线程数量和线程池状态管理](#线程数量和线程池状态管理)  
+  - [execute](#execute)  
+- [线程池执行流程图](#线程池执行流程图)  
   
 ### 什么情况下应该使用多线程  
   
@@ -1751,6 +1753,7 @@ public void execute(Runnable command) {
         reject(command); //如果创建新线程失败了，说明线程池被关闭或者线程池完全满了，拒绝任务
  }
 ```
-#### 线程池执行流程图  
+### 线程池执行流程图  
+  
 ![](https://github.com/YufeizhangRay/image/blob/master/concurrent/%E6%B5%81%E7%A8%8B%E5%9B%BE.jpeg)  
   
