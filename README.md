@@ -782,7 +782,9 @@ public class AtomicDemo {
     }
     public static void main(String[] args) throws InterruptedException {
         for(int i=0;i<1000;i++){
-            new Thread(()->{AtomicDemo.inc();}).start();;
+            new Thread(()->{
+                AtomicDemo.inc();
+            }).start();;
         }
         Thread.sleep(3000);
         System.out.println("result:"+count);
@@ -791,7 +793,7 @@ public class AtomicDemo {
 ```
   
 #### ReentrantReadWriteLock  
-我们以前理解的锁，基本都是排他锁，也就是这些锁在同一时刻只允许一个线程进行访问，而读写所在同一时刻可以允许多个线程访问，但是在写线程访问时，所有的读线程和其他写线程都会被阻塞。读写锁维护了一对锁，一个 读锁、一个写锁；一般情况下，读写锁的性能都会比排它锁好，因为大多数场景读是多于写的。在读多于写的情况 下，读写锁能够提供比排它锁更好的并发性和吞吐量。  
+我们以前理解的锁，基本都是排他锁，也就是这些锁在同一时刻只允许一个线程进行访问，而读写所在同一时刻可以允许多个线程访问，但是在写线程访问时，所有的读线程和其他写线程都会被阻塞。读写锁维护了一对锁，一个读锁、一个写锁；一般情况下，读写锁的性能都会比排它锁好，因为大多数场景读是多于写的。在读多于写的情况下，读写锁能够提供比排它锁更好的并发性和吞吐量。  
 ```
 public class LockDemo {
     static Map<String,Object> cacheMap=new HashMap<>();
@@ -827,8 +829,8 @@ public class LockDemo {
 ### Lock和synchronized的简单对比 
 通过我们对Lock的使用以及对synchronized的了解，基本上可以对比出这两种锁的区别了。  
 >从层次上，一个是关键字、一个是类， 这是最直观的差异。  
->从使用上，lock具备更大的灵活性，可以控制锁的释放和获取; 而synchronized的锁的释放是被动的，当出现 异常或者同步代码块执行完以后，才会释放锁。  
->lock可以判断锁的状态、而synchronized无法做到。  
+>从使用上，lock具备更大的灵活性，可以控制锁的释放和获取；而synchronized的锁的释放是被动的，当出现异常或者同步代码块执行完以后，才会释放锁。  
+>lock可以判断锁的状态；而synchronized无法做到。  
 >lock可以实现公平锁、非公平锁；而synchronized只有非公平锁。  
   
 ### AQS  
@@ -880,7 +882,7 @@ public final native boolean compareAndSwapObject(Object var1, long var2, Object 
 ```
 这个是一个native方法， 第一个参数为需要改变的对象，第二个为偏移量(即之前求出来的headOffset的值)，第三个参数为期待的值，第四个为更新后的值。  
 整个方法的作用是如果当前时刻的值等于预期值var4相等，则更新为新的期望值 var5，如果更新成功，则返回 true，否则返回false。  
-这里传入了一个headOffset，这个headOffset是什么呢？在下面的代码中，通过unsafe.objectFieldOffset
+这里传入了一个headOffset，这个headOffset是什么呢？在下面的代码中，通过unsafe.objectFieldOffset方法
 ![](https://github.com/YufeizhangRay/image/blob/master/concurrent/headoffset.jpeg)  
   
 然后通过反射获取了AQS类中的成员变量，并且这个成员变量被volatile修饰的。  
@@ -889,7 +891,7 @@ public final native boolean compareAndSwapObject(Object var1, long var2, Object 
 #### unsafe.objectFieldOffset 
 headOffset这个是指类中相应字段在该类的偏移量，在这里具体即是指head这个字段在AQS类的内存中相对于该类首地址的偏移量。  
   
-一个Java对象可以看成是一段内存，每个字段都得按照一定的顺序放在这段内存里，通过这个方法可以准确地告诉你某个字段相对于对象的起始内存地址的字节偏移。用于在后面的compareAndSwapObject中，去根据偏移量找 到对象在内存中的具体位置。  
+一个Java对象可以看成是一段内存，每个字段都得按照一定的顺序放在这段内存里，通过这个方法可以准确地告诉你某个字段相对于对象的起始内存地址的字节偏移。用于在后面的compareAndSwapObject中，去根据偏移量找到对象在内存中的具体位置。  
   
 这个方法在unsafe.cpp文件中，代码如下
 ```
@@ -937,7 +939,8 @@ public void lock() {
 #### NonfairSync.lock  
 ```
 final void lock() {
-    if (compareAndSetState(0, 1)) //这是跟公平锁的主要区别,一上来就试探锁是否空闲,如果可以插队，则设置获得锁的线程为当前线程 //exclusiveOwnerThread属性是AQS从父类AbstractOwnableSynchronizer中继承的属性，用来保存当前占用同步状态的线程
+    if (compareAndSetState(0, 1)) //这是跟公平锁的主要区别，一上来就试探锁是否空闲，如果可以插队，则设置获得锁的线程为当前线程 
+        //exclusiveOwnerThread属性是AQS从父类AbstractOwnableSynchronizer中继承的属性，用来保存当前占用同步状态的线程
         setExclusiveOwnerThread(Thread.currentThread());
     else
         acquire(1); //尝试去获取锁
@@ -958,8 +961,8 @@ public final void acquire(int arg) {
 }
 ```
 这个方法的主要作用是  
->尝试获取独占锁，获取成功则返回，否则  
->自旋获取锁，并且判断中断标识，如果中断标识为true，则设置线程中断  
+>尝试获取独占锁，获取成功则返回，  
+>否则自旋获取锁，并且判断中断标识，如果中断标识为true，则设置线程中断  
 >addWaiter方法把当前线程封装成Node，并添加到队列的尾部  
   
 #### NonfairSync.tryAcquire  
@@ -977,14 +980,14 @@ final boolean nonfairTryAcquire(int acquires) {
     final Thread current = Thread.currentThread();
     int c = getState(); //获取当前的状态，前面讲过，默认情况下是0表示无锁状态 
     if (c == 0) {
-        if (compareAndSetState(0, acquires)) { //通过cas来改变state状态的值，如果更新成功，表示获取锁成功, 这个操作外部方法lock()就做过一次，这里再做只是为了再尝试一次，尽量以最简单的方式获取锁。
+        if (compareAndSetState(0, acquires)) { //通过cas来改变state状态的值，如果更新成功，表示获取锁成功，这个操作外部方法lock()就做过一次，这里再做只是为了再尝试一次，尽量以最简单的方式获取锁。
             setExclusiveOwnerThread(current);
             return true;
         }
     }
     else if (current == getExclusiveOwnerThread()) {//如果当前线程等于获取锁的线程，表示重入，直接累加重入次数
         int nextc = c + acquires;
-        if (nextc < 0) // overflow 如果这个状态值越界，抛出异常;如果没有越界，则设置后返回true
+        if (nextc < 0) // overflow 如果这个状态值越界，抛出异常；如果没有越界，则设置后返回true
             throw new Error("Maximum lock count exceeded");
         setState(nextc);
         return true;
@@ -994,16 +997,16 @@ final boolean nonfairTryAcquire(int acquires) {
 }
 ```
 #### addWaiter
-当前锁如果已经被其他线程锁持有，那么当前线程来去请求锁的时候，会进入这个方法,这个方法主要是把当前线程 封装成node，添加到AQS的链表中。
+当前锁如果已经被其他线程锁持有，那么当前线程来去请求锁的时候，会进入这个方法，这个方法主要是把当前线程封装成node，添加到AQS的链表中。
 ```
 private Node addWaiter(Node mode) {
-    Node node = new Node(Thread.currentThread(), mode); //创建一个独占的Node节点,mode为排他模式
+    Node node = new Node(Thread.currentThread(), mode); //创建一个独占的Node节点，mode为排他模式
     // 尝试快速入队,如果失败则降级至full enq
     Node pred = tail; // tail是AQS的中表示同步队列队尾的属性，刚开始为null，所以进行enq(node)方法
     if (pred != null) {
         node.prev = pred;
-        if (compareAndSetTail(pred, node)) { // 防止有其他线程修改tail,使用CAS进行修改,如果失 败则降级至full enq
-            pred.next = node; // 如果成功之后旧的tail的next指针再指向新的tail,成为双向链表
+        if (compareAndSetTail(pred, node)) { // 防止有其他线程修改tail，使用CAS进行修改，如果失败则降级至full enq
+            pred.next = node; // 如果成功之后旧的tail的next指针再指向新的tail，成为双向链表
             return node;
         }
     }
@@ -1017,16 +1020,16 @@ enq就是通过自旋操作把当前节点加入到队列中。
 ```
 private Node enq(final Node node) {
     for (;;) { //无效的循环，为什么采用for(;;)，是因为它执行的指令少，不占用寄存器
-        Node t = tail;// 此时head, tail都为null
-        if (t == null) { // Must initialize// 如果tail为null则说明队列首次使用,需要进行初始化
-            if (compareAndSetHead(new Node()))// 设置头节点,如果失败则存在竞争,留至下一轮循环 
+        Node t = tail;// 此时head，tail都为null
+        if (t == null) {// 如果tail为null则说明队列首次使用，需要进行初始化
+            if (compareAndSetHead(new Node()))// 设置头节点，如果失败则存在竞争，留至下一轮循环 
                 tail = head; // 用CAS的方式创建一个空的Node作为头结点，因为此时队列中只一个头结点，所以tail也指向head，第一次循环执行结束 
         } else {
-            //进行第二次循环时，tail不为null，进入else区域。将当前线程的Node结点的prev指向tail，然后使用CAS将 tail指向Node
+            //进行第二次循环时，tail不为null，进入else区域。将当前线程的Node结点的prev指向tail，然后使用CAS将tail指向Node
             //这部分代码和addWaiter代码一样，将当前节点添加到队列
             node.prev = t;
             if (compareAndSetTail(t, node)) {
-                t.next = node; //t此时指向tail,所以可以CAS成功，将tail重新指向CNode。此时t为更 新前的tail的值，即指向空的头结点，t.next=node，就将头结点的后续结点指向Node，返回头结点。
+                t.next = node; //t此时指向tail，所以可以CAS成功，将tail重新指向CNode。此时t为更新前的tail的值，即指向空的头结点，t.next=node，就将头结点的后续结点指向Node，返回头结点。
                 return t; 
             }
         }
@@ -1037,23 +1040,23 @@ private Node enq(final Node node) {
 ![](https://github.com/YufeizhangRay/image/blob/master/concurrent/Node%E9%98%9F%E5%88%97.jpeg)  
   
 #### acquireQueued   
-addWaiter返回了插入的节点，作为acquireQueued方法的入参,这个方法主要用于争抢锁  
+addWaiter返回了插入的节点，作为acquireQueued方法的入参，这个方法主要用于争抢锁  
 ```
 final boolean acquireQueued(final Node node, int arg) {
     boolean failed = true;
     try {
         boolean interrupted = false;
         for (;;) {
-            final Node p = node.predecessor();// 获取prev节点,若为null即刻抛出 NullPointException
+            final Node p = node.predecessor();// 获取prev节点，若为null即刻抛出 NullPointException
             if (p == head && tryAcquire(arg)) {// 如果前驱为head才有资格进行锁的抢夺 
-                setHead(node); // 获取锁成功后就不需要再进行同步操作了,获取锁成功的线程作为新的head节点
-                //凡是head节点,head.thread与head.prev永远为null, 但是head.next不为null
+                setHead(node); // 获取锁成功后就不需要再进行同步操作了，获取锁成功的线程作为新的head节点
+                //凡是head节点，head.thread与head.prev永远为null，但是head.next不为null
                 p.next = null; // help GC 
                 failed = false; //获取锁成功 
                 return interrupted;
             }
             //如果获取锁失败，则根据节点的waitStatus决定是否需要挂起线程
-            if (shouldParkAfterFailedAcquire(p, node) && parkAndCheckInterrupt())// 若前面为true,则执行挂起,待下次唤醒的时候检测中断的标志  
+            if (shouldParkAfterFailedAcquire(p, node) && parkAndCheckInterrupt())// 若前面为true，则执行挂起，待下次唤醒的时候检测中断的标志  
              interrupted = true;
         } 
     } finally {
@@ -1075,7 +1078,7 @@ private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
         return true; 
     //如果前节点的状态大于0，即为CANCELLED状态时，则会从前节点开始逐步循环找到一个没有被“CANCELLED”节点设置为当前节点的前节点，
     //返回false。在下次循环执行shouldParkAfterFailedAcquire时，返回true。这个操作实际是把队列中CANCELLED的节点剔除掉。
-    if (ws > 0) {// 如果前继节点是“取消”状态，则设置 “当前节点”的 “当前前继节点” 为 “‘原前继节 点'的前继节点”。
+    if (ws > 0) {// 如果前继节点是“取消”状态，则设置 “当前节点”的 “当前前继节点” 为 “‘原前继节点'的前继节点”。
         do {
             node.prev = pred = pred.prev;
         } while (pred.waitStatus > 0);
@@ -1123,7 +1126,7 @@ public final boolean release(int arg) {
 ```
   
 #### tryRelease  
-这个动作可以认为就是一个设置锁状态的操作，而且是将状态减掉传入的参数值(参数是1)，如果结果状态为0，就将排它锁的Owner设置为null，以使得其它的线程有机会进行执行。在排它锁中，加锁的时候状态会增加1(当 然可以自己修改这个值)，在解锁的时候减掉1，同一个锁，在可以重入后，可能会被叠加为2、3、4这些值，只有unlock()的次数与lock()的次数对应才会将Owner线程设置为空，而且也只有这种情况下才会返回true。  
+这个动作可以认为就是一个设置锁状态的操作，而且是将状态减掉传入的参数值(参数是1)，如果结果状态为0，就将排它锁的Owner设置为null，以使得其它的线程有机会进行执行。在排它锁中，加锁的时候状态会增加1(当然可以自己修改这个值)，在解锁的时候减掉1，同一个锁，在可以重入后，可能会被叠加为2、3、4这些值，只有unlock()的次数与lock()的次数对应才会将Owner线程设置为空，而且也只有这种情况下才会返回true。  
 ```
 protected final boolean tryRelease(int releases) {
     int c = getState() - releases; // 这里是将锁的数量减1
@@ -1175,8 +1178,7 @@ protected final boolean* tryAcquire(int acquires) {
      final Thread current = Thread.currentThread*();
      int c = getState();
      if (c == 0) {
-         if (!hasQueuedPredecessors() &&
-             compareAndSetState(0, acquires)) {
+         if (!hasQueuedPredecessors() && compareAndSetState(0, acquires)) {
              setExclusiveOwnerThread(current);
              return true;
          } 
@@ -1245,7 +1247,7 @@ public class** ConditionDemoSignal implements  Runnable{
     }
 }
 ```  
-通过这个案例简单实现了wait和notify的功能，当调用await方法后，当前线程会释放锁并等待，而其他线程调用 condition对象的signal或者signalall方法通知并被阻塞的线程，然后自己执行unlock释放锁，被唤醒的线程获得之 前的锁继续执行，最后释放锁。所以，condition中两个最重要的方法，一个是await，一个是signal方法。  
+通过这个案例简单实现了wait和notify的功能，当调用await方法后，当前线程会释放锁并等待，而其他线程调用condition对象的signal或者signalall方法通知并被阻塞的线程，然后自己执行unlock释放锁，被唤醒的线程获得之前的锁继续执行，最后释放锁。所以condition中两个最重要的方法，一个是await，一个是signal方法。  
 >await:把当前线程阻塞挂起  
 >signal:唤醒阻塞的线程  
   
@@ -1257,25 +1259,25 @@ public final void await() throws InterruptedException {
         throw new InterruptedException();
     Node node = addConditionWaiter(); //创建一个新的节点，节点状态为condition，采用的数据结构仍然是链表
     int savedState = fullyRelease(node); //释放当前的锁，得到锁的状态，并唤醒AQS队列中的一个线程
+    int interruptMode = 0;
     //如果当前节点没有在同步队列上，即还没有被signal，则将当前线程阻塞
-    //isOnSyncQueue 判断当前 node 状态,如果是 CONDITION 状态,或者不在队列上了,就继续阻塞,还在队列上且 不是 CONDITION 状态了,就结束循环和阻塞
+    //isOnSyncQueue 判断当前 node 状态，如果是 CONDITION 状态，或者不在队列上了，就继续阻塞，还在队列上且不是 CONDITION 状态了，就结束循环和阻塞
     while (!isOnSyncQueue(node)) {//第一次判断的是false，因为前面已经释放锁了
-        LockSupport.park(this); // 第一次总是 park 自己,开始阻塞等待
-        //线程判断自己在等待过程中是否被中断了,如果没有中断,则再次循环,会在 isOnSyncQueue 中判断自己是否在队列上.
+        LockSupport.park(this); // 第一次总是 park 自己，开始阻塞等待
+        //线程判断自己在等待过程中是否被中断了，如果没有中断，则再次循环，会在 isOnSyncQueue 中判断自己是否在队列上。
         if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
             break;
     }
-    // 当这个线程醒来,会尝试拿锁, 当 acquireQueued 返回 false 就是拿到锁了.
-    // interruptMode != THROW_IE -> 表示这个线程没有成功将 node 入队,但 signal 执行了 enq 方法让其入队了.
+    // 当这个线程醒来，会尝试拿锁，当 acquireQueued 返回 false 就是拿到锁了。
+    // interruptMode != THROW_IE -> 表示这个线程没有成功将 node 入队，但 signal 执行了 enq 方法让其入队了。
     // 将这个变量设置成 REINTERRUPT.
     if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
         interruptMode = REINTERRUPT;
-    // 如果 node 的下一个等待者不是 null, 则进行清理,清理 Condition 队列上的节点.
-    int interruptMode = 0;
-    // 如果是 null ,就没有什么好清理的了.
+    // 如果 node 的下一个等待者不是 null，则进行清理，清理 Condition 队列上的节点。
+    // 如果是 null，就没有什么好清理的了。
     if (node.nextWaiter != null) // clean up if cancelled
         unlinkCancelledWaiters();
-    // 如果线程被中断了,需要抛出异常.或者什么都不做 
+    // 如果线程被中断了，需要抛出异常，或者什么都不做。 
     if (interruptMode != 0)
         reportInterruptAfterWait(interruptMode);
  }
@@ -1295,8 +1297,9 @@ public final void signal() {
 ```
 private void doSignal(Node first) {
     do {
-        if ( (firstWaiter = first.nextWaiter) == null)// 如果第一个节点的下一个节点是 null, 那么, 最后一个节点也是 null.
-            lastWaiter = null; // 将 next 节点设置成 null first.nextWaiter = null;
+        if ( (firstWaiter = first.nextWaiter) == null)// 如果第一个节点的下一个节点是 null，那么最后一个节点也是 null.
+            lastWaiter = null; 
+            first.nextWaiter = null;  // 将 next 节点设置成 null 
     } while (!transferForSignal(first) && (first = firstWaiter) != null);
 }
 ```
@@ -1307,7 +1310,7 @@ final boolean transferForSignal(Node node) {
         return false;
     Node p = enq(node);
     int ws = p.waitStatus;
-    // 如果上一个节点的状态被取消了, 或者尝试设置上一个节点的状态为 SIGNAL 失败了(SIGNAL 表示: 他的 next 节点需要停止阻塞),
+    // 如果上一个节点的状态被取消了，或者尝试设置上一个节点的状态为 SIGNAL 失败了(SIGNAL 表示：他的 next 节点需要停止阻塞),
     if (ws > 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL))
         LockSupport.unpark(node.thread); // 唤醒输入节点上的线程. 
     return true;
@@ -1318,7 +1321,7 @@ final boolean transferForSignal(Node node) {
   
 countdownlatch是一个同步工具类，它允许一个或多个线程一直等待，直到其他线程的操作执行完毕再执行。从命名可以解读到countdown是倒数的意思，类似于我们倒计时的概念。  
   
-countdownlatch提供了两个方法，一个是countDown，一个是await， countdownlatch初始化的时候需要传入一个整数，在这个整数倒数到0之前，调用了await方法的程序都必须要等待，然后通过countDown来倒数。  
+countdownlatch提供了两个方法，一个是countDown，一个是await，countdownlatch初始化的时候需要传入一个整数，在这个整数倒数到0之前，调用了await方法的程序都必须要等待，然后通过countDown来倒数。  
   
 ### 使用案例  
 ```
@@ -1341,7 +1344,7 @@ public static void main(String[] args) throws InterruptedException {
     System.out.println("所有线程执行完毕"); 
 }
 ```
-从代码的实现来看，有点类似join的功能，但是比join更加灵活。CountDownLatch构造函数会接收一个int类型的参数作为计数器的初始值，当调用CountDownLatch的countDown方法时，这个计数器就会减一。  
+从代码的实现来看，有点类似Join的功能，但是比Join更加灵活。CountDownLatch构造函数会接收一个int类型的参数作为计数器的初始值，当调用CountDownLatch的countDown方法时，这个计数器就会减一。  
   
 通过await方法去阻塞去阻塞主流程  
 ![](https://github.com/YufeizhangRay/image/blob/master/concurrent/countdownlatch.jpeg)  
@@ -1523,7 +1526,7 @@ public final void acquireSharedInterruptibly(int arg) throws InterruptedExceptio
 ```
   
 #### tryAcquireShared  
-在semaphore中存在公平和非公平的方式，和重入锁是一样的，如果通过FairSync表示公平的信号量、 NonFairSync表示非公平的信号量;公平和非公平取决于是否按照FIFO队列中的顺序去分配Semaphore所维护的 许可，我们来看非公平锁的实现。  
+在semaphore中存在公平和非公平的方式，和重入锁是一样的，如果通过FairSync表示公平的信号量、 NonFairSync表示非公平的信号量；公平和非公平取决于是否按照FIFO队列中的顺序去分配Semaphore所维护的许可，我们来看非公平锁的实现。  
   
 #### nonfairTryAcquireShared  
 自旋去获得一个许可，如果许可获取失败，也就是remaining<0的情况下，让当前线程阻塞。
@@ -1532,8 +1535,7 @@ final int nonfairTryAcquireShared(int acquires) {
     for (;;) {
         int available = getState();
         int remaining = available - acquires;
-        if (remaining < 0 ||
-            compareAndSetState(available, remaining))
+        if (remaining < 0 || compareAndSetState(available, remaining))
             return remaining;
     }
 }
@@ -1626,9 +1628,9 @@ Java中的线程池是运用场景最多的并发框架，几乎所有需要异�
 #### 线程池的使用  
 JDK 为我们内置了几种常见线程池的实现，均可以使用 Executors 工厂类创建为了更好的控制多线程，JDK提供了一套线程框架Executor，帮助开发人员有效的进行线程控制。它们都在java.util.concurrent包中，是JDK并发包的核心。其中有一个比较重要的类：Executors，他扮演着线程工厂的角色，我们通过Executors可以创建特定功能的线程池。  
    
->newFixedThreadPool**:该方法返回一个固定数量的线程池，线程数不变，当有一个任务提交时，若线程池中空闲，则立即执行，若没有，则会被暂缓在一个任务队列中，等待有空闲的线程去执行。  
+>newFixedThreadPool:该方法返回一个固定数量的线程池，线程数不变，当有一个任务提交时，若线程池中空闲，则立即执行，若没有，则会被暂缓在一个任务队列中，等待有空闲的线程去执行。  
 >newSingleThreadExecutor: 创建一个线程的线程池，若空闲则执行，若没有空闲线程则暂缓在任务队列中。   
->newCachedThreadPool**:返回一个可根据实际情况调整线程个数的线程池，不限制最大线程数量，若用空闲的线程则执行任务，若无任务则不创建线程。并且每一个空闲线程会在60秒后自动回收。  
+>newCachedThreadPool:返回一个可根据实际情况调整线程个数的线程池，不限制最大线程数量，若有空闲的线程则执行任务，若无任务则不创建线程。并且每一个空闲线程会在60秒后自动回收。  
 >newScheduledThreadPool: 创建一个可以指定线程的数量的线程池，但是这个线程池还带有延迟和周期性执行任务的功能，类似定时器。  
 ```
 public class Test implements Runnable{
@@ -1663,7 +1665,7 @@ public class Test implements Runnable{
 ```
 public ThreadPoolExecutor(int corePoolSize, //核心线程数量 
                           int maximumPoolSize, //最大线程数
-                          long keepAliveTime, //超时时间,超出核心线程数量以外的线程空余存活时间
+                          long keepAliveTime, //超时时间，超出核心线程数量以外的线程空余存活时间
                           TimeUnit unit, //存活时间单位
                           BlockingQueue<Runnable> workQueue, //保存执行任务的队列 
                           ThreadFactory threadFactory,//创建新线程使用的工厂
@@ -1680,7 +1682,7 @@ public static ExecutorService newFixedThreadPool(int nThreads) {
     return new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 }
 ```
-FixedThreadPool 的核心线程数和最大线程数都是指定值，也就是说当线程池中的线程数超过核心线程数后，任务 都会被放到阻塞队列中。另外 keepAliveTime 为 0，也就是超出核心线程数量以外的线程空余存活时间。  
+FixedThreadPool 的核心线程数和最大线程数都是指定值，也就是说当线程池中的线程数超过核心线程数后，任务都会被放到阻塞队列中。另外 keepAliveTime 为 0，也就是超出核心线程数量以外的线程空余存活时间。  
 而这里选用的阻塞队列是 LinkedBlockingQueue，使用的是默认容量 Integer.MAX_VALUE，相当于没有上限。
 这个线程池执行任务的流程如下:  
 >1.线程数少于核心线程数，也就是设置的线程数时，新建线程执行任务。  
@@ -1699,7 +1701,7 @@ public static ExecutorService newCachedThreadPool() {
 CachedThreadPool 创建一个可缓存线程池，如果线程池长度超过处理需要，可灵活回收空闲线程，若无可回收，则新建线程；并且没有核心线程，非核心线程数无上限，但是每个空闲的时间只有 60 秒，超过后就会被回收。  
 它的执行流程如下:  
 >1.没有核心线程，直接向 SynchronousQueue 中提交任务。  
->2.如果有空闲线程，就去取出任务执行;如果没有空闲线程，就新建一个。  
+>2.如果有空闲线程，就去取出任务执行，如果没有空闲线程，就新建一个。  
 >3.执行完任务的线程有 60 秒生存时间，如果在这个时间内可以接到新任务，就可以继续活下去，否则就被回收。  
   
 #### newSingleThreadExecutor  
@@ -1744,7 +1746,7 @@ public void execute(Runnable command) {
     }
     if (isRunning(c) && workQueue.offer(command)) {//2.核心池已满，但任务队列未满，添加到队列中
         int recheck = ctl.get(); //任务成功添加到队列以后，再次检查是否需要添加新的线程，因为已存在的线程可能被销毁了
-        if (! isRunning(recheck) && remove(command)) 
+        if (!isRunning(recheck) && remove(command)) 
             reject(command);//如果线程池处于非运行状态，并且把当前的任务从任务队列中移除成功，则拒绝该任务
         else if (workerCountOf(recheck) == 0)//如果之前的线程已被销毁完，新建一个线程
             addWorker(null, false);
